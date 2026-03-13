@@ -9,9 +9,6 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
           Interactive Form Prototype
         </h1>
-        <p className="mt-4 text-lg text-gray-600">
-          背景の図形がふわふわ動いていれば、本日のミッション完了です！
-        </p>
       </div>
     </main>
   );
