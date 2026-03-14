@@ -48,13 +48,24 @@ function ShapeLayer({ shapes }: { shapes: Shape[] }) {
             height: shape.size,
             left: shape.x,
             top: shape.y,
+            willChange: "transform",
+            backfaceVisibility: "hidden",
           }}
-          initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          initial={{ opacity: 0, scale: 0.5, rotate: -20, y: 0 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0, y: [0, 0, -(10 + (shape.id % 3) * 5), 0] }}
           transition={{
-            duration: 2,
-            ease: "easeOut",
-            delay: shape.id * 0.2,
+            opacity: { duration: 2, ease: "easeOut", delay: shape.id * 0.2 },
+            scale:   { duration: 2, ease: "easeOut", delay: shape.id * 0.2 },
+            rotate:  { duration: 2, ease: "easeOut", delay: shape.id * 0.2 },
+            y: {
+              // 65-75s cycle: ~83% idle, ~9% rise, ~8% fall
+              duration: 65 + (shape.id % 3) * 5,
+              times: [0, 0.83, 0.91, 1],
+              ease: "easeInOut",
+              delay: shape.id * 0.2 + 5,
+              repeat: Infinity,
+              repeatType: "loop",
+            },
           }}
         >
           <Image
@@ -62,7 +73,7 @@ function ShapeLayer({ shapes }: { shapes: Shape[] }) {
             alt=""
             width={shape.size}
             height={shape.size}
-            className="w-full h-full object-contain"
+            className="block w-full h-full object-contain border-0 outline-none"
           />
         </motion.div>
       ))}
