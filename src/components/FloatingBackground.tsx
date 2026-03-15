@@ -9,31 +9,32 @@ type Shape = {
   size: number;
   x: string;
   y: string;
+  restRotate: number; // angle after entry animation
 };
 
 const desktopShapes: Shape[] = [
-  { id: 1, src: "/shapes/blue-big.svg",         size: 220, x: "1%",  y: "2%"  },
-  { id: 2, src: "/shapes/green-medium.svg",      size: 130, x: "76%", y: "2%"  },
-  { id: 3, src: "/shapes/light-blue-small.svg",  size:  65, x: "52%", y: "-2%" },
-  { id: 4, src: "/shapes/pink-big.svg",          size: 200, x: "85%", y: "40%" },
-  { id: 5, src: "/shapes/yellow-small.svg",      size:  70, x: "65%", y: "78%" },
-  { id: 6, src: "/shapes/light-pink-medium.svg", size: 140, x: "42%", y: "84%" },
-  { id: 7, src: "/shapes/orange-big.svg",        size: 190, x: "1%",  y: "65%" },
-  { id: 8, src: "/shapes/purple-medium.svg",     size: 120, x: "5%",  y: "33%" },
-  { id: 9, src: "/shapes/red-small.svg",         size:  60, x: "25%", y: "10%" },
+  { id: 1, src: "/shapes/blue-big.svg",         size: 220, x: "1%",  y: "2%",  restRotate:  12 },
+  { id: 2, src: "/shapes/green-medium.svg",      size: 130, x: "76%", y: "2%",  restRotate:  -8 },
+  { id: 3, src: "/shapes/light-blue-small.svg",  size:  65, x: "52%", y: "-2%", restRotate:  15 },
+  { id: 4, src: "/shapes/pink-big.svg",          size: 200, x: "85%", y: "40%", restRotate: -12 },
+  { id: 5, src: "/shapes/yellow-small.svg",      size:  70, x: "65%", y: "78%", restRotate:  20 },
+  { id: 6, src: "/shapes/light-pink-medium.svg", size: 140, x: "42%", y: "84%", restRotate:  -6 },
+  { id: 7, src: "/shapes/orange-big.svg",        size: 190, x: "1%",  y: "65%", restRotate:  10 },
+  { id: 8, src: "/shapes/purple-medium.svg",     size: 120, x: "5%",  y: "33%", restRotate: -15 },
+  { id: 9, src: "/shapes/red-small.svg",         size:  60, x: "25%", y: "10%", restRotate:  18 },
 ];
 
 // Mobile: all 9 colors, small variants, positioned along edges to avoid overlap
 const mobileShapes: Shape[] = [
-  { id: 1, src: "/shapes/blue-small.svg",       size: 90, x: "1%",  y: "2%"  },
-  { id: 2, src: "/shapes/green-small.svg",      size: 60, x: "78%", y: "1%"  },
-  { id: 3, src: "/shapes/red-small.svg",        size: 50, x: "30%", y: "10%" },
-  { id: 4, src: "/shapes/light-blue-small.svg", size: 55, x: "82%", y: "20%" },
-  { id: 5, src: "/shapes/purple-small.svg",     size: 65, x: "1%",  y: "43%" },
-  { id: 6, src: "/shapes/pink-small.svg",       size: 70, x: "78%", y: "38%" },
-  { id: 7, src: "/shapes/orange-small.svg",     size: 90, x: "1%",  y: "78%" },
-  { id: 8, src: "/shapes/yellow-small.svg",     size: 55, x: "72%", y: "75%" },
-  { id: 9, src: "/shapes/light-pink-small.svg", size: 60, x: "38%", y: "87%" },
+  { id: 1, src: "/shapes/blue-small.svg",       size: 90, x: "1%",  y: "2%",  restRotate:  10 },
+  { id: 2, src: "/shapes/green-small.svg",      size: 60, x: "78%", y: "1%",  restRotate:  -7 },
+  { id: 3, src: "/shapes/red-small.svg",        size: 50, x: "30%", y: "10%", restRotate:  14 },
+  { id: 4, src: "/shapes/light-blue-small.svg", size: 55, x: "82%", y: "20%", restRotate: -10 },
+  { id: 5, src: "/shapes/purple-small.svg",     size: 65, x: "1%",  y: "43%", restRotate:  18 },
+  { id: 6, src: "/shapes/pink-small.svg",       size: 70, x: "78%", y: "38%", restRotate:  -5 },
+  { id: 7, src: "/shapes/orange-small.svg",     size: 90, x: "1%",  y: "78%", restRotate:   8 },
+  { id: 8, src: "/shapes/yellow-small.svg",     size: 55, x: "72%", y: "75%", restRotate: -13 },
+  { id: 9, src: "/shapes/light-pink-small.svg", size: 60, x: "38%", y: "87%", restRotate:  16 },
 ];
 
 function ShapeLayer({ shapes }: { shapes: Shape[] }) {
@@ -51,30 +52,32 @@ function ShapeLayer({ shapes }: { shapes: Shape[] }) {
             willChange: "transform",
             backfaceVisibility: "hidden",
           }}
-          initial={{ opacity: 0, scale: 0.5, rotate: -20, y: 0 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0, y: [0, 0, -(10 + (shape.id % 3) * 5), 0] }}
-          transition={{
-            opacity: { duration: 2, ease: "easeOut", delay: shape.id * 0.2 },
-            scale:   { duration: 2, ease: "easeOut", delay: shape.id * 0.2 },
-            rotate:  { duration: 2, ease: "easeOut", delay: shape.id * 0.2 },
-            y: {
-              // 65-75s cycle: ~83% idle, ~9% rise, ~8% fall
+          initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
+          animate={{ opacity: 1, scale: 1, rotate: shape.restRotate }}
+          transition={{ duration: 2, ease: "easeOut", delay: shape.id * 0.2 }}
+        >
+          <motion.div
+            animate={{
+              y: [0, 0, -(10 + (shape.id % 3) * 5), 0],
+              rotate: [0, 0, shape.id % 2 === 0 ? -8 : 8, 0],
+            }}
+            transition={{
               duration: 65 + (shape.id % 3) * 5,
               times: [0, 0.83, 0.91, 1],
               ease: "easeInOut",
               delay: shape.id * 0.2 + 5,
               repeat: Infinity,
               repeatType: "loop",
-            },
-          }}
-        >
-          <Image
-            src={shape.src}
-            alt=""
-            width={shape.size}
-            height={shape.size}
-            className="block w-full h-full object-contain border-0 outline-none"
-          />
+            }}
+          >
+            <Image
+              src={shape.src}
+              alt=""
+              width={shape.size}
+              height={shape.size}
+              className="block w-full h-full object-contain border-0 outline-none"
+            />
+          </motion.div>
         </motion.div>
       ))}
     </>
