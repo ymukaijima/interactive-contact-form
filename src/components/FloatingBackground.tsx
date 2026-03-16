@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useState } from "react";
 
 type Shape = {
   id: number;
@@ -38,48 +39,56 @@ const mobileShapes: Shape[] = [
 ];
 
 function ShapeLayer({ shapes }: { shapes: Shape[] }) {
+  const [wiggling, setWiggling] = useState<Record<number, boolean>>({});
+
   return (
     <>
-      {shapes.map((shape) => (
-        <motion.div
-          key={shape.id}
-          className="absolute"
-          style={{
-            width: shape.size,
-            height: shape.size,
-            left: shape.x,
-            top: shape.y,
-            willChange: "transform",
-            backfaceVisibility: "hidden",
-          }}
-          initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
-          animate={{ opacity: 1, scale: 1, rotate: shape.restRotate }}
-          transition={{ duration: 2, ease: "easeOut", delay: shape.id * 0.2 }}
-        >
+      {shapes.map((shape) => {
+        const isWiggling = wiggling[shape.id] ?? false;
+        const dy = -(10 + (shape.id % 3) * 5);
+        const dr = shape.id % 2 === 0 ? -8 : 8;
+
+        return (
           <motion.div
-            animate={{
-              y: [0, 0, -(10 + (shape.id % 3) * 5), 0],
-              rotate: [0, 0, shape.id % 2 === 0 ? -8 : 8, 0],
+            key={shape.id}
+            className="absolute"
+            style={{
+              width: shape.size,
+              height: shape.size,
+              left: shape.x,
+              top: shape.y,
+              willChange: "transform",
+              backfaceVisibility: "hidden",
             }}
-            transition={{
-              duration: 65 + (shape.id % 3) * 5,
-              times: [0, 0.83, 0.91, 1],
-              ease: "easeInOut",
-              delay: shape.id * 0.2 + 5,
-              repeat: Infinity,
-              repeatType: "loop",
-            }}
+            initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: shape.restRotate }}
+            transition={{ duration: 2, ease: "easeOut", delay: shape.id * 0.2 }}
+            onAnimationComplete={() =>
+              setWiggling((prev) => ({ ...prev, [shape.id]: true }))
+            }
           >
-            <Image
-              src={shape.src}
-              alt=""
-              width={shape.size}
-              height={shape.size}
-              className="block w-full h-full object-contain border-0 outline-none"
-            />
+            <motion.div
+              animate={isWiggling ? { y: [0, dy, 0], rotate: [0, dr, 0] } : {}}
+              transition={{
+                duration: 8,
+                times: [0, 0.5, 1],
+                ease: "easeInOut",
+                repeat: Infinity,
+                repeatType: "loop",
+                repeatDelay: 0,
+              }}
+            >
+              <Image
+                src={shape.src}
+                alt=""
+                width={shape.size}
+                height={shape.size}
+                className="block w-full h-full object-contain border-0 outline-none"
+              />
+            </motion.div>
           </motion.div>
-        </motion.div>
-      ))}
+        );
+      })}
     </>
   );
 }
