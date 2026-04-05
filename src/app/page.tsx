@@ -1,4 +1,5 @@
 import FloatingBackground from "@/components/FloatingBackground";
+import { TestForm } from "@/components/TestForm";
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
           Interactive Form Prototype
         </h1>
+        <TestForm />
       </div>
     </main>
   );
