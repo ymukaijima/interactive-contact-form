@@ -74,7 +74,8 @@ export default function AssessmentForm() {
   const totalSteps = SECTIONS.length + 1;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
-  const setAnswer = (key: string, value: string) => {
+  const setAnswer = (key: string, value: string | null) => {
+    if (!value) return;
     setAnswers((prev) => ({ ...prev, [key]: value }));
   };
 
