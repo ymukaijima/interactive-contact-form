@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { FORM_ENTRY_IDS } from "@/constants/form";
 import { submitToGoogleForm } from "@/lib/googleForm";
 
@@ -53,6 +53,73 @@ const SECTIONS: Section[] = [
       { id: "M-1-8", label: "所属部署は、環境を問わない多様な働き方に対応できる人事制度が整備されている" },
       { id: "M-1-9", label: "自分は、職場で多様な経験をしたり、視野を広げている" },
       { id: "M-1-10", label: "所属部署では、定期的な部署異動を推奨している" },
+    ],
+  },
+  {
+    title: "2. ビジョン共有",
+    questions: [
+      { id: "M-2-1", label: "自分は、所属部署のビジョンやミッションを理解している" },
+      { id: "M-2-2", label: "所属部署は、ビジョン・ミッション（またはそれに類するもの）を体現している" },
+      { id: "M-2-3", label: "経営幹部は、従業員に所属部署のビジョンやミッションを伝えている" },
+      { id: "M-2-5", label: "所属部署は、ビジョン・ミッション（またはそれに類するもの）に基づいて意思決定をしている" },
+      { id: "M-2-6", label: "自分は、所属部署のビジョン・ミッション（またはそれに類するもの）に共感している" },
+      { id: "M-2-7", label: "所属部署は、短期的な業務目標ではなく、中長期的なビジョン・ミッションに向けたコミュニケーションや議論をしている" },
+      { id: "M-2-8", label: "所属部署は、短期的な業務目標ではなく、中長期的なビジョン・ミッションに向けた活動をしている" },
+      { id: "M-2-9", label: "自分は、社会、会社、顧客の成長に貢献している" },
+    ],
+  },
+  {
+    title: "3. 自主性",
+    questions: [
+      { id: "M-3-1", label: "自分の仕事範囲や目標は、マネージャー（直属の上司）が決めるのではなく自分が発案して合意することができる" },
+      { id: "M-3-2", label: "自分は、自分の仕事に関してマネージャー（直属の上司）から権限委譲されている" },
+      { id: "M-3-3", label: "マネージャー（直属の上司）は、常に部下の成長を考えている" },
+      { id: "M-3-4", label: "マネージャー（直属の上司）は、部下の目標や期待値に関して合意形成をしている" },
+      { id: "M-3-5", label: "自分は、日頃からマネージャー（直属の上司）と個別面談（1対1）をしている" },
+      { id: "M-3-6", label: "自分は、自分の仕事に関してマネージャー（直属の上司）から公正に評価されている" },
+      { id: "M-3-7", label: "評価制度は、結果だけではなく、社員の成長も考慮している" },
+      { id: "M-3-8", label: "自分は、マネージャー（直属の上司）に関する評価やフィードバックをすることができる" },
+      { id: "M-3-9", label: "自分は、所属部署に関する評価やフィードバックをすることができる" },
+    ],
+  },
+  {
+    title: "4. 内発的動機付け",
+    questions: [
+      { id: "M-4-1", label: "自分は、知りたい情報を社内検索することができる" },
+      { id: "M-4-2", label: "自分は、日頃から社内で好奇心を刺激されている" },
+      { id: "M-4-3", label: "自分は、所属部署で誰にでも気軽に質問や相談をすることができる" },
+      { id: "M-4-4", label: "所属部署は、いかなる意見や質問でも歓迎し許容している" },
+      { id: "M-4-5", label: "所属部署には、投書箱やアイデアコンテストなど新しいアイデアを実現する仕組みがある" },
+      { id: "M-4-6", label: "自分は、業務内容を問わず興味のあることに取り組むことができている" },
+      { id: "M-4-7", label: "所属部署は、人材育成に人的・資金的リソースを十分に割いている" },
+      { id: "M-4-8", label: "所属部署には、従業員がお互いに学びあう文化や仕組みがある" },
+      { id: "M-4-9", label: "自分は、組織的な人材育成や日頃の仕事によって継続的に成長している" },
+      { id: "M-4-10", label: "所属部署は、従業員に対しての賞賛や感謝をオープンに称えている" },
+      { id: "M-4-11", label: "人事異動は、社員個人の意思や成長を十分に尊重している" },
+    ],
+  },
+  {
+    title: "5. リスクテイク",
+    questions: [
+      { id: "M-5-1", label: "所属部署は、社員がミスをしてもたいてい非難しない" },
+      { id: "M-5-2", label: "所属部署は、課題や難しい問題を指摘し合える" },
+      { id: "M-5-3", label: "所属部署は、自分と異なるということを理由に他者を拒絶しない" },
+      { id: "M-5-4", label: "所属部署は、リスクのあるチャレンジを歓迎し許容している" },
+      { id: "M-5-5", label: "所属部署は、他者に気軽に助けを求めることができる" },
+      { id: "M-5-6", label: "所属部署は、自分を意図的におとしめるような行動をしない" },
+      { id: "M-5-7", label: "所属部署は、自分のスキルや才能を尊重し活かしている" },
+    ],
+  },
+  {
+    title: "6. つながりとコラボレーション",
+    questions: [
+      { id: "M-6-1", label: "自分は、所属部署でいつでも誰とでも気軽にコミュニケーションできる" },
+      { id: "M-6-2", label: "所属部署では、即時性の高いコミュニケーションツールを活用できている" },
+      { id: "M-6-3", label: "所属部署は、即時性かつ透明性高く情報共有をしている" },
+      { id: "M-6-4", label: "自分は、日頃から所属部署外の社員と気軽に交流している" },
+      { id: "M-6-5", label: "自分は、業務において所属部署外の社員と頻繁にコラボレーション（協業）をしている" },
+      { id: "M-6-6", label: "オフィス環境は、社員同士の偶発的なつながりや会話が生まれやすい" },
+      { id: "M-6-7", label: "オフィス環境は、クリエイティブなアイデアを議論をしやすい" },
     ],
   },
 ];
@@ -119,37 +186,37 @@ export default function AssessmentForm() {
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* ヘッダー: タイトルエリア */}
-      <header className="border-t border-gray-300 pt-16 pb-12 px-6 md:px-16 lg:px-24">
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900">
-          ASSESSMENT
-        </h1>
-        <p className="text-sm text-gray-500 mt-2">
-          組織課題アセスメント
-        </p>
-        <div className="mt-10 max-w-2xl">
-          <p className="text-gray-700 leading-relaxed">
-            イノベーションを生み出す組織の課題と現状を把握するアセスメントです。
-          </p>
-          <p className="text-gray-700 leading-relaxed">
-            各項目について、最も当てはまるものをお選びください。
-          </p>
-        </div>
-      </header>
+    <div className="min-h-screen flex items-center justify-center px-4 md:px-8 py-12">
+      <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100 p-8 md:p-14">
 
-      {/* プログレスバー */}
-      <div className="px-6 md:px-16 lg:px-24 pb-8">
-        <div className="flex justify-between text-xs text-gray-400 mb-2">
-          <span>STEP {currentStep + 1} / {totalSteps}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <Progress value={progress} className="h-[2px]" />
-      </div>
+        {/* ヘッダー: タイトルエリア */}
+        <header className="text-center mb-10">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-gray-900">
+            ASSESSMENT
+          </h1>
+          <p className="text-sm text-gray-500 mt-2">
+            組織課題アセスメント
+          </p>
+          <div className="mt-8 max-w-xl mx-auto">
+            <p className="text-base text-gray-700 leading-relaxed">
+              イノベーションを生み出す組織の課題と現状を把握するアセスメントです。
+            </p>
+            <p className="text-base text-gray-700 leading-relaxed">
+              各項目について、最も当てはまるものをお選びください。
+            </p>
+          </div>
+        </header>
 
-      {/* フォームエリア */}
-      <div className="flex-1 px-6 md:px-16 lg:px-24 py-12">
-        <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100 p-8 md:p-12">
+        {/* プログレスバー */}
+        <div className="mb-10">
+          <div className="flex justify-between text-sm text-gray-400 mb-2">
+            <span>STEP {currentStep + 1} / {totalSteps}</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <Progress value={progress} className="h-[2px]" />
+        </div>
+
+        <div>
 
           {/* ステップ0: 属性選択 */}
           {currentStep === 0 && (
@@ -160,14 +227,14 @@ export default function AssessmentForm() {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium text-gray-900">属性選択</Label>
+                  <Label className="text-base font-medium text-gray-900">属性選択</Label>
                   <span className="text-xs text-orange-500 font-medium">必須</span>
                 </div>
                 <Select
                   value={answers["role"] || ""}
                   onValueChange={(value) => setAnswer("role", value)}
                 >
-                  <SelectTrigger className="w-full bg-white border-gray-200 rounded-lg h-12 text-sm">
+                  <SelectTrigger className="w-full bg-white border-gray-200 rounded-lg h-12 text-base">
                     <SelectValue placeholder="選択してください" />
                   </SelectTrigger>
                   <SelectContent>
@@ -182,14 +249,14 @@ export default function AssessmentForm() {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium text-gray-900">所属部署</Label>
+                  <Label className="text-base font-medium text-gray-900">所属部署</Label>
                   <span className="text-xs text-orange-500 font-medium">必須</span>
                 </div>
                 <Select
                   value={answers["department"] || ""}
                   onValueChange={(value) => setAnswer("department", value)}
                 >
-                  <SelectTrigger className="w-full bg-white border-gray-200 rounded-lg h-12 text-sm">
+                  <SelectTrigger className="w-full bg-white border-gray-200 rounded-lg h-12 text-base">
                     <SelectValue placeholder="選択してください" />
                   </SelectTrigger>
                   <SelectContent>
@@ -211,7 +278,7 @@ export default function AssessmentForm() {
                 <h2 className="text-xl font-semibold text-gray-900">
                   {SECTIONS[currentStep - 1].title}
                 </h2>
-                <p className="text-sm text-gray-400 mt-2">
+                <p className="text-base text-gray-400 mt-2">
                   各項目について、最も当てはまるものを選んでください
                 </p>
               </div>
@@ -222,34 +289,32 @@ export default function AssessmentForm() {
                     key={question.id}
                     className="bg-white rounded-xl border border-gray-100 p-6 space-y-4"
                   >
-                    <Label className="text-sm leading-relaxed text-gray-800 block">
+                    <Label className="text-base leading-relaxed text-gray-800 block">
                       <span className="text-gray-400 mr-2">Q{index + 1}</span>
                       {question.label}
                     </Label>
-                    <RadioGroup
-                      value={answers[question.id] || ""}
-                      onValueChange={(value) => setAnswer(question.id, value)}
-                      className="flex gap-2 pt-2"
-                    >
-                      {SCALE_OPTIONS.map((option) => (
-                        <div key={option.value} className="flex-1">
-                          <RadioGroupItem
-                            value={option.value}
-                            id={`${question.id}-${option.value}`}
-                            className="peer sr-only"
-                          />
-                          <Label
-                            htmlFor={`${question.id}-${option.value}`}
-                            className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 bg-gray-50 p-3 hover:bg-gray-100 peer-data-[state=checked]:border-gray-900 peer-data-[state=checked]:bg-gray-900 peer-data-[state=checked]:text-white cursor-pointer transition-all text-center"
+                    <div className="flex gap-3 pt-2">
+                      {SCALE_OPTIONS.map((option) => {
+                        const isSelected = answers[question.id] === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setAnswer(question.id, option.value)}
+                            className={`flex-1 flex flex-col items-center gap-2 rounded-xl border p-4 cursor-pointer transition-all text-center ${
+                              isSelected
+                                ? "border-gray-900 bg-gray-900 text-white"
+                                : "border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-900"
+                            }`}
                           >
-                            <span className="text-base font-semibold">{option.value}</span>
-                            <span className="text-[10px] leading-tight opacity-70">
+                            <span className="text-lg font-semibold">{option.value}</span>
+                            <span className="text-xs leading-tight opacity-70">
                               {option.label}
                             </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>

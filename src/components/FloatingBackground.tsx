@@ -47,6 +47,7 @@ function ShapeLayer({ shapes }: { shapes: Shape[] }) {
         const isWiggling = wiggling[shape.id] ?? false;
         const dy = -(10 + (shape.id % 3) * 5);
         const dr = shape.id % 2 === 0 ? -8 : 8;
+        const wiggleDuration = 6 + (shape.id % 4) * 2; // 6, 8, 10, 12秒のバリエーション
 
         return (
           <motion.div
@@ -70,7 +71,7 @@ function ShapeLayer({ shapes }: { shapes: Shape[] }) {
             <motion.div
               animate={isWiggling ? { y: [0, dy, 0], rotate: [0, dr, 0] } : {}}
               transition={{
-                duration: 8,
+                duration: wiggleDuration,
                 times: [0, 0.5, 1],
                 ease: "easeInOut",
                 repeat: Infinity,
