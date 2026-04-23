@@ -384,19 +384,40 @@ export default function AssessmentForm() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [unansweredIds, setUnansweredIds] = useState<string[]>([]);
 
-  const totalSteps = SECTIONS.length + 1;
+  // TODO: 開発用に2セクションに制限中。本番公開時に SECTIONS に戻す
+  const activeSections = SECTIONS.slice(0, 2);
+  const totalSteps = activeSections.length + 1;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const setAnswer = (key: string, value: string | null) => {
     if (!value) return;
-    setAnswers((prev) => ({ ...prev, [key]: value }));
+    const newAnswers = { ...answers, [key]: value };
+    setAnswers(newAnswers);
+
+    // 属性選択ページ: 両方選択済みならエラーを消す
+    if (currentStep === 0) {
+      if (newAnswers["role"] && newAnswers["department"]) {
+        setValidationError("");
+      }
+    }
+
+    // 設問ページ: 回答したらその設問のエラーを消す
+    if (unansweredIds.includes(key)) {
+      const remaining = unansweredIds.filter((id) => id !== key);
+      setUnansweredIds(remaining);
+      if (remaining.length === 0) {
+        setValidationError("");
+      }
+    }
 
     // PCのみ: 次の設問へ自動スクロール
     if (currentStep > 0 && window.innerWidth >= 640) {
-      const currentQuestions = SECTIONS[currentStep - 1].questions.filter(
+      const currentQuestions = activeSections[currentStep - 1].questions.filter(
         (q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）",
       );
       const currentIndex = currentQuestions.findIndex((q) => q.id === key);
@@ -413,6 +434,35 @@ export default function AssessmentForm() {
   };
 
   const handleNext = () => {
+    // バリデーション: ステップ0（属性選択）
+    if (currentStep === 0) {
+      if (!answers["role"] || !answers["department"]) {
+        setValidationError("属性選択と所属部署を選択してください。");
+        return;
+      }
+    }
+
+    // バリデーション: セクション（設問）
+    if (currentStep > 0 && currentStep <= activeSections.length) {
+      const unanswered = activeSections[currentStep - 1].questions
+        .filter((q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）")
+        .filter((q) => !answers[q.id]);
+      if (unanswered.length > 0) {
+        const ids = unanswered.map((q) => q.id);
+        setUnansweredIds(ids);
+        setValidationError(`未回答の設問が${unanswered.length}件あります。すべての設問に回答してください。`);
+        setTimeout(() => {
+          document.getElementById(`question-${ids[0]}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 100);
+        return;
+      }
+    }
+
+    setValidationError("");
+    setUnansweredIds([]);
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
       formTopRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -426,9 +476,34 @@ export default function AssessmentForm() {
     }
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+  // 送信ボタン押下時: バリデーション + 確認ダイアログ表示
+  const handleSubmitClick = () => {
+    const unanswered = activeSections[currentStep - 1].questions
+      .filter((q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）")
+      .filter((q) => !answers[q.id]);
+    if (unanswered.length > 0) {
+      const ids = unanswered.map((q) => q.id);
+      setUnansweredIds(ids);
+      setValidationError(`未回答の設問が${unanswered.length}件あります。すべての設問に回答してください。`);
+      setTimeout(() => {
+        document.getElementById(`question-${ids[0]}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
+      return;
+    }
+    setValidationError("");
+    setUnansweredIds([]);
+    setShowConfirm(true);
+  };
 
+  // 確認ダイアログで「送信する」を押した時の処理
+  const handleSubmit = () => {
+    setShowConfirm(false);
+    setIsCompleted(true);
+
+    // 裏で送信（ユーザーには即座にThank you画面を表示）
     const formData: Record<string, string> = {
       company_id: companyId,
       company_name: companyName,
@@ -441,14 +516,7 @@ export default function AssessmentForm() {
       }
     });
 
-    const success = await submitToGoogleForm(formData);
-    setIsSubmitting(false);
-
-    if (success) {
-      setIsCompleted(true);
-    } else {
-      alert("送信に失敗しました。もう一度お試しください。");
-    }
+    submitToGoogleForm(formData);
   };
 
   const isLastStep = currentStep === totalSteps - 1;
@@ -629,11 +697,11 @@ export default function AssessmentForm() {
           )}
 
           {/* ステップ1〜: 各セクションの設問 */}
-          {currentStep > 0 && currentStep <= SECTIONS.length && (
+          {currentStep > 0 && currentStep <= activeSections.length && (
             <div className="space-y-10">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {SECTIONS[currentStep - 1].title}
+                  {activeSections[currentStep - 1].title}
                 </h2>
                 <p className="text-base text-gray-400 mt-2">
                   各項目について、最も当てはまるものを選んでください
@@ -641,7 +709,7 @@ export default function AssessmentForm() {
               </div>
 
               <div className="space-y-6">
-                {SECTIONS[currentStep - 1].questions
+                {activeSections[currentStep - 1].questions
                   .filter(
                     (q) =>
                       !q.executiveOnly ||
@@ -651,7 +719,11 @@ export default function AssessmentForm() {
                     <div
                       key={question.id}
                       id={`question-${question.id}`}
-                      className="bg-white rounded-xl border-2 border-gray-200 p-6 space-y-4 shadow-sm"
+                      className={`bg-white rounded-xl border-2 p-6 space-y-4 shadow-sm ${
+                        unansweredIds.includes(question.id)
+                          ? "border-red-300"
+                          : "border-gray-200"
+                      }`}
                     >
                       <Label className="text-base leading-relaxed text-gray-800 block">
                         <span className="text-gray-400 mr-2">Q{index + 1}</span>
@@ -690,9 +762,19 @@ export default function AssessmentForm() {
                         })}
                         </div>
                       </div>
+                      {unansweredIds.includes(question.id) && (
+                        <p className="text-xs text-red-500">この設問に回答してください</p>
+                      )}
                     </div>
                   ))}
               </div>
+            </div>
+          )}
+
+          {/* バリデーションエラー */}
+          {validationError && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              {validationError}
             </div>
           )}
 
@@ -709,11 +791,10 @@ export default function AssessmentForm() {
 
             {isLastStep ? (
               <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-8 h-11"
+                onClick={handleSubmitClick}
+                className="bg-[#EB643C] hover:bg-[#d45835] text-white rounded-full px-8 h-12 text-base font-semibold shadow-lg"
               >
-                {isSubmitting ? "送信中..." : "送信する →"}
+                送信する →
               </Button>
             ) : (
               <Button
@@ -724,8 +805,38 @@ export default function AssessmentForm() {
               </Button>
             )}
           </div>
+
         </div>
       </div>
+
+      {/* 送信確認ダイアログ */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 text-center">
+              回答を送信しますか？
+            </h3>
+            <p className="text-sm text-gray-500 mt-3 text-center">
+              送信後は回答を変更できません。<br />内容をご確認の上、送信してください。
+            </p>
+            <div className="flex gap-3 mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 rounded-full h-11"
+              >
+                戻る
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                className="flex-1 bg-[#EB643C] hover:bg-[#d45835] text-white rounded-full h-11"
+              >
+                送信する
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
