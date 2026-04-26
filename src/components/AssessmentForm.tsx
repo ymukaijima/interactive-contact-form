@@ -34,6 +34,7 @@ export default function AssessmentForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [unansweredIds, setUnansweredIds] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState(false);
 
   const activeSections = SECTIONS;
   const totalSteps = activeSections.length + 1;
@@ -78,6 +79,29 @@ export default function AssessmentForm() {
     }
   };
 
+  // 現在のセクションに未回答があるか検証し、エラー表示・スクロールまで行う
+  // 戻り値: true=全回答済み, false=未回答あり
+  const validateCurrentSection = (): boolean => {
+    if (currentStep === 0 || currentStep > activeSections.length) return true;
+
+    const unanswered = activeSections[currentStep - 1].questions
+      .filter((q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）")
+      .filter((q) => !answers[q.id]);
+
+    if (unanswered.length === 0) return true;
+
+    const ids = unanswered.map((q) => q.id);
+    setUnansweredIds(ids);
+    setValidationError(`未回答の設問が${unanswered.length}件あります。すべての設問に回答してください。`);
+    setTimeout(() => {
+      document.getElementById(`question-${ids[0]}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
+    return false;
+  };
+
   const handleNext = () => {
     // バリデーション: ステップ0（属性選択）
     if (currentStep === 0) {
@@ -88,23 +112,7 @@ export default function AssessmentForm() {
     }
 
     // バリデーション: セクション（設問）
-    if (currentStep > 0 && currentStep <= activeSections.length) {
-      const unanswered = activeSections[currentStep - 1].questions
-        .filter((q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）")
-        .filter((q) => !answers[q.id]);
-      if (unanswered.length > 0) {
-        const ids = unanswered.map((q) => q.id);
-        setUnansweredIds(ids);
-        setValidationError(`未回答の設問が${unanswered.length}件あります。すべての設問に回答してください。`);
-        setTimeout(() => {
-          document.getElementById(`question-${ids[0]}`)?.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }, 100);
-        return;
-      }
-    }
+    if (!validateCurrentSection()) return;
 
     setValidationError("");
     setUnansweredIds([]);
@@ -123,32 +131,17 @@ export default function AssessmentForm() {
 
   // 送信ボタン押下時: バリデーション + 確認ダイアログ表示
   const handleSubmitClick = () => {
-    const unanswered = activeSections[currentStep - 1].questions
-      .filter((q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）")
-      .filter((q) => !answers[q.id]);
-    if (unanswered.length > 0) {
-      const ids = unanswered.map((q) => q.id);
-      setUnansweredIds(ids);
-      setValidationError(`未回答の設問が${unanswered.length}件あります。すべての設問に回答してください。`);
-      setTimeout(() => {
-        document.getElementById(`question-${ids[0]}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }, 100);
-      return;
-    }
+    if (!validateCurrentSection()) return;
     setValidationError("");
     setUnansweredIds([]);
     setShowConfirm(true);
   };
 
   // 確認ダイアログで「送信する」を押した時の処理
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setShowConfirm(false);
-    setIsCompleted(true);
+    setIsCompleted(true); // 楽観的に完了画面を表示
 
-    // 裏で送信（ユーザーには即座にThank you画面を表示）
     const formData: Record<string, string> = {
       company_id: companyId,
       company_name: companyName,
@@ -161,7 +154,12 @@ export default function AssessmentForm() {
       }
     });
 
-    submitToGoogleForm(formData);
+    const success = await submitToGoogleForm(formData);
+    if (!success) {
+      // 送信失敗時は完了画面からエラー表示に切り替え
+      setIsCompleted(false);
+      setSubmitError(true);
+    }
   };
 
   const isLastStep = currentStep === totalSteps - 1;
@@ -420,6 +418,13 @@ export default function AssessmentForm() {
           {validationError && (
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
               {validationError}
+            </div>
+          )}
+
+          {/* 送信エラー */}
+          {submitError && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              送信に失敗しました。通信環境を確認の上、もう一度「送信する」を押してください。
             </div>
           )}
 
