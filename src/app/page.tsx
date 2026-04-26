@@ -8,7 +8,7 @@ export default function Home() {
     <main className="relative min-h-screen">
       <FloatingBackground />
       <div className="relative z-10">
-        <header className="pt-6 px-6 md:px-12">
+        <header className="pt-6 px-6 md:px-12 flex justify-end">
           <Image
             src="/logo/logo_black.png"
             alt="Logo"
