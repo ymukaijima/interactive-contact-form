@@ -63,9 +63,7 @@ export default function AssessmentForm() {
 
     // PCのみ: 次の設問へ自動スクロール
     if (currentStep > 0 && window.innerWidth >= 640) {
-      const currentQuestions = activeSections[currentStep - 1].questions.filter(
-        (q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）",
-      );
+      const currentQuestions = activeSections[currentStep - 1].questions;
       const currentIndex = currentQuestions.findIndex((q) => q.id === key);
       if (currentIndex >= 0 && currentIndex < currentQuestions.length - 1) {
         const nextId = currentQuestions[currentIndex + 1].id;
@@ -85,7 +83,6 @@ export default function AssessmentForm() {
     if (currentStep === 0 || currentStep > activeSections.length) return true;
 
     const unanswered = activeSections[currentStep - 1].questions
-      .filter((q) => !q.executiveOnly || answers["role"] === "経営層（役員・CxOなど）")
       .filter((q) => !answers[q.id]);
 
     if (unanswered.length === 0) return true;
@@ -352,13 +349,8 @@ export default function AssessmentForm() {
               </div>
 
               <div className="space-y-6">
-                {activeSections[currentStep - 1].questions
-                  .filter(
-                    (q) =>
-                      !q.executiveOnly ||
-                      answers["role"] === "経営層（役員・CxOなど）",
-                  )
-                  .map((question, index) => (
+                {activeSections[currentStep - 1].questions.map(
+                  (question, index) => (
                     <div
                       key={question.id}
                       id={`question-${question.id}`}
@@ -390,7 +382,7 @@ export default function AssessmentForm() {
                                 }
                                 className={`flex-1 flex flex-col items-center gap-2 rounded-xl border p-3 sm:p-4 cursor-pointer transition-all text-center ${
                                   isSelected
-                                    ? "border-gray-900 bg-gray-900 text-white"
+                                    ? "border-[#FFE632] bg-[#FFE632] text-gray-900"
                                     : "border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-900"
                                 }`}
                               >

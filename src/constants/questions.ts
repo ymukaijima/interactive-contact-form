@@ -28,7 +28,6 @@ export const DEPARTMENT_OPTIONS = [
 export type Question = {
   id: string;
   label: string;
-  executiveOnly?: boolean; // trueなら経営層のみ表示
 };
 
 export type Section = {
@@ -95,13 +94,11 @@ export const SECTIONS: Section[] = [
         id: "E-1-3",
         label:
           "採用面接では、面接官の主観や好みではなく、構造化された「共通の評価基準」に基づいて判断している。",
-        executiveOnly: true,
       },
       {
         id: "E-1-4",
         label:
           "採用活動において、同質的な人材（自分たちと似た人）に偏らず、あえて異質な才能を採用するための具体的な仕組みがある。",
-        executiveOnly: true,
       },
     ],
   },
@@ -127,13 +124,11 @@ export const SECTIONS: Section[] = [
         id: "E-2-4",
         label:
           "経営層は、短期的な利益だけでなく、「社会に対するインパクト（パーパス）」を優先して意思決定を行っている。",
-        executiveOnly: true,
       },
       {
         id: "E-2-5",
         label:
           "私の部署には、全員が目指すべき明確な「共通の指針（ビジョン・ミッション）」が設定・共有されている。",
-        executiveOnly: true,
       },
       {
         id: "M-2-5",
