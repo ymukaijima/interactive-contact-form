@@ -12,7 +12,9 @@ import {
   type CompanyConfig,
 } from "@/lib/hrConfig";
 
-const cellKey = (slot: string, role: string) => `${slot}__${role}`;
+// 既存部署のセルキー: 部署名 + 役職（部署名はスプシで一意）
+const existingCellKey = (deptName: string, role: string) =>
+  `${deptName}__${role}`;
 const roleShortLabel = (role: string) => role.replace(/（.*?）/, "");
 
 // 全角数字 → 半角数字に変換し、数字以外は除去
@@ -21,34 +23,52 @@ const normalizeNumberInput = (value: string) =>
     .replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0))
     .replace(/[^0-9]/g, "");
 
+// 新規追加する部署の行
+type NewDept = {
+  id: string; // フロント内部のローカルID（送信時には使わない）
+  name: string;
+  counts: Record<string, string>; // role -> 数値文字列
+};
+
+// 簡易ID生成（crypto.randomUUID 未対応環境のフォールバック）
+const genId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+
 export default function HRForm() {
   const formTopRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const companyId = searchParams.get("company") || "";
 
   const [config, setConfig] = useState<CompanyConfig | null>(null);
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-  const [configError, setConfigError] = useState("");
+  const [isLoadingConfig, setIsLoadingConfig] = useState(!!companyId);
+  const [configError, setConfigError] = useState(
+    !companyId ? "会社IDが指定されていません。URLをご確認ください。" : ""
+  );
 
   const [surveyDate, setSurveyDate] = useState("");
+  // 既存部署の人数: key = `${deptName}__${role}`
   const [counts, setCounts] = useState<Record<string, string>>({});
+  // 新規追加する部署リスト
+  const [newDepts, setNewDepts] = useState<NewDept[]>([]);
+
   const [isCompleted, setIsCompleted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [invalidCells, setInvalidCells] = useState<Set<string>>(new Set());
+  const [invalidNewDeptNames, setInvalidNewDeptNames] = useState<Set<string>>(
+    new Set()
+  );
   const [dateInvalid, setDateInvalid] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
   useEffect(() => {
-    if (!companyId) {
-      setIsLoadingConfig(false);
-      setConfigError("会社IDが指定されていません。URLをご確認ください。");
-      return;
-    }
-    setIsLoadingConfig(true);
-    setConfigError("");
+    if (!companyId) return;
+    let cancelled = false;
     getCompanyConfig(companyId)
       .then((c) => {
+        if (cancelled) return;
         if (!c) {
           setConfigError(
             `会社ID「${companyId}」の設定が見つかりません。担当者にご確認ください。`
@@ -58,69 +78,199 @@ export default function HRForm() {
         }
       })
       .catch(() => {
+        if (cancelled) return;
         setConfigError(
           "設定の取得に失敗しました。通信環境をご確認の上、ページを再読み込みしてください。"
         );
       })
-      .finally(() => setIsLoadingConfig(false));
+      .finally(() => {
+        if (!cancelled) setIsLoadingConfig(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [companyId]);
 
-  // 調査日と期間表から判定される「何回目か」(null = 期間外)
   const detectedRound = config
     ? getRoundFromDate(surveyDate, config.periods)
     : null;
 
-  const setCount = (slot: string, role: string, value: string) => {
-    const key = cellKey(slot, role);
+  const clearErrorIfAllValid = (
+    nextInvalidCells: Set<string>,
+    nextInvalidNames: Set<string>,
+    nextDateInvalid: boolean
+  ) => {
+    if (
+      nextInvalidCells.size === 0 &&
+      nextInvalidNames.size === 0 &&
+      !nextDateInvalid
+    ) {
+      setValidationError("");
+    }
+  };
+
+  const setExistingCount = (deptName: string, role: string, value: string) => {
+    const key = existingCellKey(deptName, role);
     const normalized = normalizeNumberInput(value);
     setCounts((prev) => ({ ...prev, [key]: normalized }));
     if (invalidCells.has(key)) {
       const next = new Set(invalidCells);
       next.delete(key);
       setInvalidCells(next);
-      if (next.size === 0 && !dateInvalid) setValidationError("");
+      clearErrorIfAllValid(next, invalidNewDeptNames, dateInvalid);
     }
+  };
+
+  const setNewDeptName = (id: string, name: string) => {
+    setNewDepts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, name } : d))
+    );
+    if (invalidNewDeptNames.has(id)) {
+      const next = new Set(invalidNewDeptNames);
+      next.delete(id);
+      setInvalidNewDeptNames(next);
+      clearErrorIfAllValid(invalidCells, next, dateInvalid);
+    }
+  };
+
+  const setNewDeptCount = (id: string, role: string, value: string) => {
+    const normalized = normalizeNumberInput(value);
+    setNewDepts((prev) =>
+      prev.map((d) =>
+        d.id === id
+          ? { ...d, counts: { ...d.counts, [role]: normalized } }
+          : d
+      )
+    );
+    const cellKey = `${id}__${role}`;
+    if (invalidCells.has(cellKey)) {
+      const next = new Set(invalidCells);
+      next.delete(cellKey);
+      setInvalidCells(next);
+      clearErrorIfAllValid(next, invalidNewDeptNames, dateInvalid);
+    }
+  };
+
+  const addNewDept = () => {
+    setNewDepts((prev) => [
+      ...prev,
+      { id: genId(), name: "", counts: {} },
+    ]);
+  };
+
+  const removeNewDept = (id: string) => {
+    setNewDepts((prev) => prev.filter((d) => d.id !== id));
+    // 当該部署に紐づくinvalidをクリーンアップ
+    const nextInvalidNames = new Set(invalidNewDeptNames);
+    nextInvalidNames.delete(id);
+    setInvalidNewDeptNames(nextInvalidNames);
+
+    const nextInvalidCells = new Set(invalidCells);
+    for (const role of ROLE_OPTIONS) {
+      nextInvalidCells.delete(`${id}__${role}`);
+    }
+    setInvalidCells(nextInvalidCells);
+    clearErrorIfAllValid(nextInvalidCells, nextInvalidNames, dateInvalid);
   };
 
   const validate = (): boolean => {
     if (!config) return false;
 
-    const invalid = new Set<string>();
+    const invalidCellsNext = new Set<string>();
+    const invalidNamesNext = new Set<string>();
     const dateMissing = !surveyDate;
 
+    // 既存部署の人数チェック
     for (const dept of config.departments) {
       for (const role of ROLE_OPTIONS) {
-        const key = cellKey(dept.slot, role);
+        const key = existingCellKey(dept.name, role);
         const v = counts[key];
-        if (v === undefined || v === "") continue; // 空欄は 0 扱い
+        if (v === undefined || v === "") continue;
         const n = Number(v);
         if (Number.isNaN(n) || n < 0 || !Number.isInteger(n)) {
-          invalid.add(key);
+          invalidCellsNext.add(key);
         }
       }
     }
 
-    setInvalidCells(invalid);
+    // 新規部署の人数チェック + 名前チェック
+    const trimmedNewNames = newDepts.map((d) => d.name.trim());
+    for (let i = 0; i < newDepts.length; i++) {
+      const d = newDepts[i];
+      const trimmedName = trimmedNewNames[i];
+
+      // 名前の空欄チェック
+      if (!trimmedName) {
+        invalidNamesNext.add(d.id);
+      }
+
+      // 人数チェック
+      for (const role of ROLE_OPTIONS) {
+        const v = d.counts[role];
+        if (v === undefined || v === "") continue;
+        const n = Number(v);
+        if (Number.isNaN(n) || n < 0 || !Number.isInteger(n)) {
+          invalidCellsNext.add(`${d.id}__${role}`);
+        }
+      }
+    }
+
+    // 部署名重複チェック（既存 + 新規）
+    const existingNames = new Set(config.departments.map((d) => d.name));
+    const newNameCount = new Map<string, string[]>(); // name -> ids
+    for (let i = 0; i < newDepts.length; i++) {
+      const trimmedName = trimmedNewNames[i];
+      if (!trimmedName) continue;
+      if (existingNames.has(trimmedName)) {
+        invalidNamesNext.add(newDepts[i].id);
+      }
+      const arr = newNameCount.get(trimmedName) ?? [];
+      arr.push(newDepts[i].id);
+      newNameCount.set(trimmedName, arr);
+    }
+    for (const ids of newNameCount.values()) {
+      if (ids.length > 1) {
+        for (const id of ids) invalidNamesNext.add(id);
+      }
+    }
+
+    setInvalidCells(invalidCellsNext);
+    setInvalidNewDeptNames(invalidNamesNext);
     setDateInvalid(dateMissing);
 
-    if (invalid.size > 0) {
-      setValidationError(
-        `不正な値が${invalid.size}件あります。0以上の整数を入力してください。${
-          dateMissing ? "また、調査日も入力してください。" : ""
-        }`
+    // エラーメッセージ組み立て
+    const messages: string[] = [];
+    if (invalidNamesNext.size > 0) {
+      messages.push(
+        "部署名に問題があります（空欄、または既存部署と重複、または新規部署同士で重複しています）。"
       );
-      return false;
+    }
+    if (invalidCellsNext.size > 0) {
+      messages.push("人員数は0以上の整数を入力してください。");
     }
     if (dateMissing) {
-      setValidationError("調査日を入力してください。");
+      messages.push("調査日を入力してください。");
+    }
+
+    // 部署0件チェック
+    if (config.departments.length === 0 && newDepts.length === 0) {
+      messages.push(
+        "部署が登録されていません。「+ 部署を追加」から部署を追加してください。"
+      );
+    }
+
+    if (messages.length > 0) {
+      setValidationError(messages.join(" "));
       return false;
     }
+
     if (detectedRound === null) {
       setValidationError(
         "調査日がアセスメント実施期間外です。期間内の日付を指定してください。"
       );
       return false;
     }
+
     setValidationError("");
     return true;
   };
@@ -135,19 +285,35 @@ export default function HRForm() {
     setShowConfirm(false);
     setIsCompleted(true);
 
+    // 送信データ: 既存部署 + 新規部署を統一フォーマットで送る
+    const departments = [
+      ...config.departments.map((d) => ({
+        name: d.name,
+        isNew: false,
+        counts: ROLE_OPTIONS.reduce<Record<string, number>>((acc, role) => {
+          const v = counts[existingCellKey(d.name, role)];
+          acc[role] = v ? Number(v) : 0;
+          return acc;
+        }, {}),
+      })),
+      ...newDepts.map((d) => ({
+        name: d.name.trim(),
+        isNew: true,
+        counts: ROLE_OPTIONS.reduce<Record<string, number>>((acc, role) => {
+          const v = d.counts[role];
+          acc[role] = v ? Number(v) : 0;
+          return acc;
+        }, {}),
+      })),
+    ];
+
     const formData: Record<string, string> = {
       form_type: "hr_headcount",
       company_id: companyId,
       survey_date: surveyDate,
       round: String(detectedRound),
+      departments: JSON.stringify(departments),
     };
-    for (const dept of config.departments) {
-      for (const role of ROLE_OPTIONS) {
-        const key = cellKey(dept.slot, role);
-        // GAS側で「スロット記号」と「役職」を識別できる形にして送る
-        formData[`slot_${key}`] = String(Number(counts[key] ?? 0));
-      }
-    }
 
     const success = await submitToGoogleForm(formData);
     if (!success) {
@@ -194,6 +360,9 @@ export default function HRForm() {
             この情報は、回答率（回答数÷在籍人数）の算出に使用されます。
           </p>
           <p className="text-xs text-gray-500 mt-4 text-center">
+            ※正社員のみ。休職中の方は除く。
+          </p>
+          <p className="text-xs text-gray-500 mt-1 text-center">
             会社ID: {companyId || "（未指定）"}
           </p>
         </header>
@@ -227,7 +396,11 @@ export default function HRForm() {
                   setSurveyDate(e.target.value);
                   if (e.target.value) {
                     setDateInvalid(false);
-                    if (invalidCells.size === 0) setValidationError("");
+                    clearErrorIfAllValid(
+                      invalidCells,
+                      invalidNewDeptNames,
+                      false
+                    );
                   }
                 }}
                 className={`w-full bg-white border rounded-lg h-12 px-3 text-base focus:outline-none focus:border-gray-400 ${
@@ -261,9 +434,12 @@ export default function HRForm() {
               <p className="text-xs text-gray-500">
                 在籍人数を入力してください。空欄のマスは 0 として扱われます。
               </p>
+              <p className="text-xs text-gray-500">
+                ※既に登録済みの部署は変更・削除できません。訂正が必要な場合はお問い合わせください。
+              </p>
 
               <div className="overflow-x-auto -mx-2 sm:mx-0 pb-2">
-                <table className="w-full min-w-[440px]">
+                <table className="w-full min-w-[480px]">
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left text-xs sm:text-sm font-medium text-gray-700 py-3 px-2 w-[28%]">
@@ -277,16 +453,21 @@ export default function HRForm() {
                           {roleShortLabel(role)}
                         </th>
                       ))}
+                      <th className="w-[40px]" />
                     </tr>
                   </thead>
                   <tbody>
+                    {/* 既存部署 */}
                     {config.departments.map((dept) => (
-                      <tr key={dept.slot} className="border-b border-gray-100">
+                      <tr
+                        key={`existing_${dept.name}`}
+                        className="border-b border-gray-100"
+                      >
                         <td className="text-sm text-gray-800 py-2 px-2 whitespace-nowrap">
                           {dept.name}
                         </td>
                         {ROLE_OPTIONS.map((role) => {
-                          const key = cellKey(dept.slot, role);
+                          const key = existingCellKey(dept.name, role);
                           const isInvalid = invalidCells.has(key);
                           return (
                             <td key={role} className="py-2 px-1">
@@ -296,7 +477,11 @@ export default function HRForm() {
                                 pattern="[0-9]*"
                                 value={counts[key] ?? ""}
                                 onChange={(e) =>
-                                  setCount(dept.slot, role, e.target.value)
+                                  setExistingCount(
+                                    dept.name,
+                                    role,
+                                    e.target.value
+                                  )
                                 }
                                 className={`w-full text-center bg-white border rounded-lg px-2 py-2 text-base focus:outline-none focus:border-gray-400 ${
                                   isInvalid
@@ -308,10 +493,82 @@ export default function HRForm() {
                             </td>
                           );
                         })}
+                        <td />
                       </tr>
                     ))}
+
+                    {/* 新規追加部署 */}
+                    {newDepts.map((d) => {
+                      const nameInvalid = invalidNewDeptNames.has(d.id);
+                      return (
+                        <tr
+                          key={`new_${d.id}`}
+                          className="border-b border-gray-100 bg-amber-50/40"
+                        >
+                          <td className="py-2 px-2">
+                            <input
+                              type="text"
+                              value={d.name}
+                              onChange={(e) =>
+                                setNewDeptName(d.id, e.target.value)
+                              }
+                              placeholder="部署名を入力"
+                              className={`w-full bg-white border rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-gray-400 ${
+                                nameInvalid
+                                  ? "border-red-300"
+                                  : "border-gray-200"
+                              }`}
+                            />
+                          </td>
+                          {ROLE_OPTIONS.map((role) => {
+                            const cellKey = `${d.id}__${role}`;
+                            const isInvalid = invalidCells.has(cellKey);
+                            return (
+                              <td key={role} className="py-2 px-1">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={d.counts[role] ?? ""}
+                                  onChange={(e) =>
+                                    setNewDeptCount(d.id, role, e.target.value)
+                                  }
+                                  className={`w-full text-center bg-white border rounded-lg px-2 py-2 text-base focus:outline-none focus:border-gray-400 ${
+                                    isInvalid
+                                      ? "border-red-300"
+                                      : "border-gray-200"
+                                  }`}
+                                  placeholder="0"
+                                />
+                              </td>
+                            );
+                          })}
+                          <td className="py-2 px-1 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeNewDept(d.id)}
+                              className="text-gray-400 hover:text-red-500 text-lg leading-none"
+                              aria-label={`${d.name || "新規部署"}を削除`}
+                            >
+                              ×
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* 部署追加ボタン */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={addNewDept}
+                  className="text-sm text-gray-600 hover:text-gray-900 border border-dashed border-gray-300 rounded-lg px-4 py-2 hover:border-gray-400 transition-colors"
+                >
+                  ＋ 部署を追加
+                </button>
               </div>
             </div>
 

@@ -1,13 +1,18 @@
-// 人事フォーム用: 会社別スプシ (input1 / input2) から取得する設定の型と取得関数。
-// 本番ではGAS API経由でスプシの内容を返すが、まずはモックで動作確認する。
+// 人事フォーム用: 会社別スプシ (input1 / input2) の設定をGAS API経由で取得する。
+//
+// 設計方針（クライアント承認済み・2026-06-11）:
+// - 部署リストは会社ごとに input2 のD列から動的取得（案B）
+// - 人事フォームから新規部署を追加した場合、GAS側で input2 のD列の空きスロットに書き込む
+// - スロット記号（A〜T）はGAS内部で管理。フロントは部署名のみ扱う
+
+import { GAS_ENDPOINT_URL } from "@/constants/form";
 
 export type Department = {
-  slot: string; // "A", "B", ..., "T"
-  name: string; // 部署名 (例: "財務")
+  name: string;
 };
 
 export type SurveyPeriod = {
-  round: number; // 1, 2, 3, 4
+  round: number;
   startDate: string; // "YYYY-MM-DD"
   endDate: string;
 };
@@ -19,32 +24,42 @@ export type CompanyConfig = {
   periods: SurveyPeriod[];
 };
 
-// A001 (会社A) の現状を模したモックデータ。
-// クライアント返答前なので、現在の input2 / input1 の値をそのまま反映している。
-const MOCK_CONFIGS: Record<string, CompanyConfig> = {
-  A001: {
-    companyId: "A001",
-    departments: [
-      { slot: "A", name: "財務" },
-      { slot: "D", name: "技術" },
-      { slot: "F", name: "販売促進" },
-      { slot: "H", name: "マーケティング" },
-      { slot: "K", name: "広報" },
-      { slot: "T", name: "営業" },
-    ],
-    periods: [
-      { round: 1, startDate: "2024-10-08", endDate: "2024-11-05" },
-      { round: 2, startDate: "2024-11-06", endDate: "2024-11-15" },
-    ],
-  },
+// GAS API 共通呼び出し: ?data=<JSON> 形式
+// 成功時は result.data を返し、失敗時は null を返す
+const callGasApi = async <T>(
+  payload: Record<string, string>
+): Promise<T | null> => {
+  if (!GAS_ENDPOINT_URL) return null;
+  try {
+    const url = `${GAS_ENDPOINT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.status !== "ok") return null;
+    return result.data as T;
+  } catch (error) {
+    console.error("GAS API error:", error);
+    return null;
+  }
 };
 
 export const getCompanyConfig = async (
   companyId: string
 ): Promise<CompanyConfig | null> => {
-  // TODO: クライアント確認後、GAS API (action=get_company_config) に置き換える
-  await new Promise((r) => setTimeout(r, 200)); // 通信遅延の擬似
-  return MOCK_CONFIGS[companyId] ?? null;
+  return await callGasApi<CompanyConfig>({
+    action: "get_company_config",
+    company_id: companyId,
+  });
+};
+
+// アセスメントフォーム用: 部署名の配列のみ返す軽量版
+export const getCompanyDepartments = async (
+  companyId: string
+): Promise<string[] | null> => {
+  const data = await callGasApi<{ departments: string[] }>({
+    action: "get_departments",
+    company_id: companyId,
+  });
+  return data ? data.departments : null;
 };
 
 // surveyDate ("YYYY-MM-DD") が periods のどの回に該当するかを返す。
