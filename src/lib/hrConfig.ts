@@ -77,3 +77,24 @@ export const getRoundFromDate = (
   }
   return null;
 };
+
+// アセスメントフォーム用: 現在該当する回のendDateを返す。
+// 現在期間内 → その回のendDate、期間外 → 直近未来の回のendDate、それもなければ null
+export const getActiveDeadline = (
+  periods: SurveyPeriod[],
+  today: string = new Date().toISOString().split("T")[0]
+): string | null => {
+  const sorted = [...periods].sort((a, b) => a.round - b.round);
+  const current = sorted.find(
+    (p) => today >= p.startDate && today <= p.endDate
+  );
+  if (current) return current.endDate;
+  const upcoming = sorted.find((p) => today < p.startDate);
+  return upcoming ? upcoming.endDate : null;
+};
+
+// "2024-11-15" → "11月15日"
+export const formatDeadlineJP = (dateStr: string): string => {
+  const [, month, day] = dateStr.split("-");
+  return `${parseInt(month, 10)}月${parseInt(day, 10)}日`;
+};

@@ -15,7 +15,12 @@ import {
 
 import { FORM_ENTRY_IDS } from "@/constants/form";
 import { submitToGoogleForm } from "@/lib/googleForm";
-import { getCompanyDepartments } from "@/lib/hrConfig";
+import {
+  getCompanyConfig,
+  getActiveDeadline,
+  formatDeadlineJP,
+  type CompanyConfig,
+} from "@/lib/hrConfig";
 import {
   SECTIONS,
   ROLE_OPTIONS,
@@ -36,12 +41,10 @@ export default function AssessmentForm() {
   const [unansweredIds, setUnansweredIds] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState(false);
 
-  // 部署リスト: 会社別スプシ (input2) から動的取得
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [isLoadingDepartments, setIsLoadingDepartments] = useState(
-    !!companyId
-  );
-  const [departmentError, setDepartmentError] = useState(
+  // 会社設定: 会社別スプシ (input1/input2) から動的取得（部署リスト + 期間表）
+  const [config, setConfig] = useState<CompanyConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(!!companyId);
+  const [configError, setConfigError] = useState(
     !companyId
       ? "会社IDが指定されていません。担当者から共有されたURLからアクセスしてください。"
       : ""
@@ -50,34 +53,41 @@ export default function AssessmentForm() {
   useEffect(() => {
     if (!companyId) return;
     let cancelled = false;
-    getCompanyDepartments(companyId)
-      .then((depts) => {
+    getCompanyConfig(companyId)
+      .then((c) => {
         if (cancelled) return;
-        if (depts === null) {
-          setDepartmentError(
+        if (c === null) {
+          setConfigError(
             `会社ID「${companyId}」の設定が見つかりません。担当者にご確認ください。`
           );
-        } else if (depts.length === 0) {
-          setDepartmentError(
+        } else if (c.departments.length === 0) {
+          setConfigError(
             "部署が登録されていません。先に人事担当者による部署登録が必要です。"
           );
         } else {
-          setDepartments(depts);
+          setConfig(c);
         }
       })
       .catch(() => {
         if (cancelled) return;
-        setDepartmentError(
-          "部署リストの取得に失敗しました。通信環境をご確認の上、ページを再読み込みしてください。"
+        setConfigError(
+          "設定の取得に失敗しました。通信環境をご確認の上、ページを再読み込みしてください。"
         );
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingDepartments(false);
+        if (!cancelled) setIsLoadingConfig(false);
       });
     return () => {
       cancelled = true;
     };
   }, [companyId]);
+
+  // config から派生する値
+  const departments = config?.departments.map((d) => d.name) ?? [];
+  const deadlineDate = config ? getActiveDeadline(config.periods) : null;
+  const deadlineText = deadlineDate
+    ? formatDeadlineJP(deadlineDate)
+    : "担当者にご確認ください";
 
   const activeSections = SECTIONS;
   const totalSteps = activeSections.length + 1;
@@ -145,8 +155,8 @@ export default function AssessmentForm() {
   const handleNext = () => {
     // バリデーション: ステップ0（属性選択）
     if (currentStep === 0) {
-      if (departmentError) {
-        setValidationError(departmentError);
+      if (configError) {
+        setValidationError(configError);
         return;
       }
       if (!answers["role"] || !answers["department"]) {
@@ -304,7 +314,7 @@ export default function AssessmentForm() {
               <p className="text-sm text-gray-700 font-bold">
                 所要時間：約10〜15分
                 <br />
-                回答期限：◯月◯日
+                回答期限：{deadlineText}
               </p>
             </div>
           )}
@@ -329,19 +339,19 @@ export default function AssessmentForm() {
                 あなたについて教えてください
               </h2>
 
-              {isLoadingDepartments && (
+              {isLoadingConfig && (
                 <div className="py-10 text-center text-sm text-gray-500">
                   会社情報を読み込んでいます...
                 </div>
               )}
 
-              {!isLoadingDepartments && departmentError && (
+              {!isLoadingConfig && configError && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-                  {departmentError}
+                  {configError}
                 </div>
               )}
 
-              {!isLoadingDepartments && !departmentError && (
+              {!isLoadingConfig && !configError && (
               <>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
