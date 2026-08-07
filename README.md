@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Interactive Contact Form
 
-## Getting Started
+組織風土・働きがいに関するアセスメントフォーム。React (Next.js) で作成し、Google Apps Script (GAS) 経由で Google スプレッドシートにデータを保存する。
 
-First, run the development server:
+## アーキテクチャ
+
+```
+React (フォーム入力)
+  ↓ ?company=A001&name=会社A の URL パラメータで会社識別
+  ↓ GET リクエスト + JSON データ
+GAS (doGet)
+  ↓ マスタースプシに全データを集約
+マスタースプシ
+  ↓ 会社IDに応じて自動振り分け
+会社別スプシ
+  ↓ Looker Studio に連携
+Looker Studio
+```
+
+## セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. 環境変数の設定
+
+プロジェクトルートに `.env.local` を作成：
+
+```
+NEXT_PUBLIC_GAS_ENDPOINT_URL=https://script.google.com/macros/s/<YOUR_SCRIPT_ID>/exec
+```
+
+Vercel にデプロイする場合は、Vercel ダッシュボードの **Settings → Environment Variables** で同じ変数を Production / Preview に追加する。
+
+### 3. 開発サーバーの起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`http://localhost:3000` でアクセス。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 使い方
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+会社ごとに専用 URL を発行する：
 
-## Learn More
+```
+https://your-domain.com/?company=A001&name=会社A
+```
 
-To learn more about Next.js, take a look at the following resources:
+| パラメータ | 意味 |
+|---|---|
+| `company` | 会社ID（GAS の COMPANY_SHEETS に登録されているもの） |
+| `name` | 会社名（マスタースプシに記録される表示名） |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+回答者は URL からアクセスするだけで、自動的に該当の会社のスプシにデータが振り分けられる。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ファイル構成
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   └── page.tsx           # ページ本体
+├── components/
+│   ├── AssessmentForm.tsx     # フォーム本体（state・バリデーション・画面）
+│   ├── FloatingBackground.tsx # 背景アニメーション
+│   └── ui/                    # shadcn/ui コンポーネント
+├── constants/
+│   ├── form.ts            # GAS URL（env）と entry ID
+│   └── questions.ts       # 設問データ・選択肢
+└── lib/
+    └── googleForm.ts      # GAS への送信関数
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 会社の追加方法
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+新しい会社のスプシを作成し、GAS に登録する：
+
+1. GAS エディタで `addNewCompany()` 関数の `companyId` と `companyName` を書き換える
+2. 関数を実行 → 原本スプシのコピーが作成される
+3. ログに表示された新しいスプシIDを `COMPANY_SHEETS` に追加：
+   ```javascript
+   const COMPANY_SHEETS = {
+     "A001": "1D15jwbX4...",
+     "B002": "新しいスプシID",  // 追加
+   };
+   ```
+4. GAS をデプロイし直す
+
+## デプロイ
+
+main ブランチにマージすると Vercel が自動でデプロイする。
+
+- **本番**: `main` ブランチ → 本番 URL
+- **プレビュー**: 各ブランチ → `<branch>-<project>.vercel.app`
+
+## 技術スタック
+
+- **Next.js 16** (App Router, Turbopack)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS v4**
+- **shadcn/ui** (Select, Button, Label, Progress)
+- **framer-motion** (背景アニメーション)
+- **Google Apps Script** (バックエンド)
