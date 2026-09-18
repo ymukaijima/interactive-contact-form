@@ -1,19 +1,14 @@
 // src/lib/googleForm.ts
-import { GAS_ENDPOINT_URL } from "@/constants/form";
+// [DEMO MODE] Mocked for portfolio. See main branch for the real implementation.
+// [DEMO MODE] このファイルはポートフォリオ用にモック化されています。本番実装は main ブランチ参照。
 
 /**
- * Reactのフォームデータを受け取り、GAS経由でマスタースプレッドシートへ送信する関数
+ * [DEMO] Does not actually submit. Simulates a successful response after 500ms.
+ * [DEMO] 実際には送信せず、500ms待って成功レスポンスを返す
  */
-export const submitToGoogleForm = async (data: Record<string, string>) => {
-  try {
-    // データをURLパラメータとして送信（GETリクエスト）
-    const url = `${GAS_ENDPOINT_URL}?data=${encodeURIComponent(JSON.stringify(data))}`;
-
-    const response = await fetch(url);
-    const result = await response.json();
-    return result.status === "ok";
-  } catch (error) {
-    console.error("送信エラー:", error);
-    return false;
-  }
+export const submitToGoogleForm = async (
+  _data: Record<string, string>
+): Promise<boolean> => {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return true;
 };

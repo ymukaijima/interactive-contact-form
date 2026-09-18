@@ -1,11 +1,5 @@
-// 人事フォーム用: 会社別スプシ (input1 / input2) の設定をGAS API経由で取得する。
-//
-// 設計方針（クライアント承認済み・2026-06-11）:
-// - 部署リストは会社ごとに input2 のD列から動的取得（案B）
-// - 人事フォームから新規部署を追加した場合、GAS側で input2 のD列の空きスロットに書き込む
-// - スロット記号（A〜T）はGAS内部で管理。フロントは部署名のみ扱う
-
-import { GAS_ENDPOINT_URL } from "@/constants/form";
+// [DEMO MODE] Mocked for portfolio. See main branch for the real GAS API integration.
+// [DEMO MODE] ポートフォリオ用にモック化。本番のGAS API連携は main ブランチ参照。
 
 export type Department = {
   name: string;
@@ -24,42 +18,37 @@ export type CompanyConfig = {
   periods: SurveyPeriod[];
 };
 
-// GAS API 共通呼び出し: ?data=<JSON> 形式
-// 成功時は result.data を返し、失敗時は null を返す
-const callGasApi = async <T>(
-  payload: Record<string, string>
-): Promise<T | null> => {
-  if (!GAS_ENDPOINT_URL) return null;
-  try {
-    const url = `${GAS_ENDPOINT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
-    const response = await fetch(url);
-    const result = await response.json();
-    if (result.status !== "ok") return null;
-    return result.data as T;
-  } catch (error) {
-    console.error("GAS API error:", error);
-    return null;
-  }
+// Demo data returned to any companyId
+// どの companyId でも同じデモデータを返す
+const DEMO_CONFIG: CompanyConfig = {
+  companyId: "DEMO",
+  companyName: "Demo Company",
+  departments: [
+    { name: "営業" },
+    { name: "マーケティング" },
+    { name: "エンジニアリング" },
+    { name: "人事" },
+    { name: "経理" },
+  ],
+  periods: [
+    // Cover a broad range so today is always inside a period during demos
+    // デモ時に今日が期間内になるよう広く取っている
+    { round: 1, startDate: "2020-01-01", endDate: "2099-12-31" },
+  ],
 };
 
 export const getCompanyConfig = async (
   companyId: string
 ): Promise<CompanyConfig | null> => {
-  return await callGasApi<CompanyConfig>({
-    action: "get_company_config",
-    company_id: companyId,
-  });
+  await new Promise((r) => setTimeout(r, 200));
+  return { ...DEMO_CONFIG, companyId: companyId || "DEMO" };
 };
 
-// アセスメントフォーム用: 部署名の配列のみ返す軽量版
 export const getCompanyDepartments = async (
   companyId: string
 ): Promise<string[] | null> => {
-  const data = await callGasApi<{ departments: string[] }>({
-    action: "get_departments",
-    company_id: companyId,
-  });
-  return data ? data.departments : null;
+  const config = await getCompanyConfig(companyId);
+  return config ? config.departments.map((d) => d.name) : null;
 };
 
 // surveyDate ("YYYY-MM-DD") が periods のどの回に該当するかを返す。
@@ -79,7 +68,6 @@ export const getRoundFromDate = (
 };
 
 // アセスメントフォーム用: 現在該当する回のendDateを返す。
-// 現在期間内 → その回のendDate、期間外 → 直近未来の回のendDate、それもなければ null
 export const getActiveDeadline = (
   periods: SurveyPeriod[],
   today: string = new Date().toISOString().split("T")[0]
