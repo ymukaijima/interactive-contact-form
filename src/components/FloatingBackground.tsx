@@ -58,8 +58,6 @@ function ShapeLayer({ shapes }: { shapes: Shape[] }) {
               height: shape.size,
               left: shape.x,
               top: shape.y,
-              willChange: "transform",
-              backfaceVisibility: "hidden",
             }}
             initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
             animate={{ opacity: 1, scale: 1, rotate: shape.restRotate }}
