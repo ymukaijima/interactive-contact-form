@@ -115,7 +115,15 @@ Googleフォームから、GAS経由でスプレッドシートに直接書き�
 
 ## スクリーンショット
 
-（撮影後に追加）
+| アセスメントフォーム：最初の画面 | アセスメントフォーム：設問 |
+|---|---|
+| ![回答期限が表示された最初の画面](docs/screenshots/01-assessment-intro.jpg) | ![回答を選択した設問](docs/screenshots/02-assessment-questions.jpg) |
+| **未回答の設問のエラー表示** | **完了画面** |
+| ![未回答の設問が赤く表示された状態](docs/screenshots/03-assessment-validation.jpg) | ![THANK YOU画面](docs/screenshots/04-assessment-complete.jpg) |
+
+| 人事フォーム | スマホ表示 |
+|---|---|
+| ![回の判定と新規部署の追加をした人事フォーム](docs/screenshots/05-hr-form.jpg) | <img src="docs/screenshots/06-mobile.jpg" alt="スマホで表示したアセスメントフォーム" width="260"> |
 
 ---
 

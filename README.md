@@ -116,7 +116,15 @@ The client's direction changed a few times during the project, and some finished
 
 ## Screenshots
 
-_Coming soon_
+| Assessment form — intro | Assessment form — questions |
+|---|---|
+| ![Intro screen with the response deadline](docs/screenshots/01-assessment-intro.jpg) | ![Questions with selected answers](docs/screenshots/02-assessment-questions.jpg) |
+| **Validation for unanswered questions** | **Completion screen** |
+| ![Unanswered questions highlighted in red](docs/screenshots/03-assessment-validation.jpg) | ![Thank you screen](docs/screenshots/04-assessment-complete.jpg) |
+
+| HR form | Mobile |
+|---|---|
+| ![HR form with a detected round and a newly added department](docs/screenshots/05-hr-form.jpg) | <img src="docs/screenshots/06-mobile.jpg" alt="Assessment form on mobile" width="260"> |
 
 ---
 
