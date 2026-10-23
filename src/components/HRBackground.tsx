@@ -12,11 +12,11 @@ type Shape = {
 };
 
 const desktopShapes: Shape[] = [
-  { id: 1, src: "/shapes/green-big.svg", size: 1800, x: "-30%", y: "-35%", rotate: 5 },
+  { id: 1, src: "/shapes/green-big.png", size: 1800, x: "-30%", y: "-35%", rotate: 5 },
 ];
 
 const mobileShapes: Shape[] = [
-  { id: 1, src: "/shapes/green-big.svg", size: 900, x: "-40%", y: "-25%", rotate: 5 },
+  { id: 1, src: "/shapes/green-big.png", size: 900, x: "-40%", y: "-25%", rotate: 5 },
 ];
 
 function ShapeLayer({ shapes }: { shapes: Shape[] }) {
