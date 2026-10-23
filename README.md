@@ -97,7 +97,7 @@ The survey date is matched against each round's start and end dates. The assessm
 Data is fetched without calling `setState` synchronously inside `useEffect`. A cancellation flag stops a stale response from overwriting newer state.
 
 ### 6. Brand animation with Framer Motion
-Each shape plays an entry animation, then switches to a looping wiggle once the entry finishes. The wiggle's size and speed come from each shape's ID, so the motion looks random but stays the same on every load. Rotated shapes showed thin lines around their edges. `willChange` and `backfaceVisibility` made them fainter but didn't remove them. Comparing renders showed the real cause: each SVG wrapped a PNG in a `<pattern>`, and the browser drew the pattern's edge when rotated. Switching to the PNGs directly fixed it, so I removed the earlier workaround.
+Each shape plays an entry animation, then switches to a looping wiggle once the entry finishes. The wiggle's size and speed come from each shape's ID, so the motion looks random but stays the same on every load.
 
 ---
 
@@ -111,6 +111,9 @@ The numbers depend on four things: company, department, round, and role. I gave 
 
 ### 3. Handling spec changes
 The client's direction changed a few times during the project, and some finished parts had to be rebuilt. Because the UI, API calls, and data formatting lived in separate files, each change stayed contained.
+
+### 4. Tracking down a rendering bug
+Rotated shapes showed thin lines around their edges, and CSS tweaks didn't remove them. Comparing renders showed the cause: each SVG wrapped a PNG image. Using the PNGs directly fixed it.
 
 ---
 
