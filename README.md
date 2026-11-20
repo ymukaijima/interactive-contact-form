@@ -88,7 +88,7 @@ I compared two options with the client:
 Companies had different department names and numbers, so we went with Option B. I also put department registration and headcount entry in the same form. On the first visit, HR adds departments while entering numbers. After that, the saved departments show up automatically, so there's no separate setup step.
 
 ### 3. Migrating without breaking the data pipeline
-I replaced Google Forms with direct writes to the spreadsheet through GAS. The writes keep the existing column layout, so the Looker Studio dashboards didn't need any changes. The HR form's endpoints are routed by an `action` parameter, so I could add them without touching the existing assessment handler.
+I replaced Google Forms with direct writes to the spreadsheet through GAS. The writes keep the existing column layout, so the Looker Studio dashboards didn't need any changes. The GAS endpoint checks a field in each request (`action` or `form_type`) and routes it to the right handler, so I could add the HR form without touching the existing assessment handler.
 
 ### 4. Detecting the assessment round from dates
 The survey date is matched against each round's start and end dates. The assessment form uses today's date to find the current round (or the next one) and shows its end date as the deadline.
